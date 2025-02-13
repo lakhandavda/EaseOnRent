@@ -8,7 +8,75 @@
 </head>
 <body>
     <h1>Welcome to EaseOn Rent</h1>
-    <div id="properties"></div>
-    <script src="app.js"></script>
+
+    <form id="property-form">
+        <input type="text" id="title" placeholder="Title" required>
+        <input type="text" id="description" placeholder="Description" required>
+        <input type="number" id="price" placeholder="Price" required>
+        <input type="text" id="location" placeholder="Location" required>
+        <input type="text" id="image" placeholder="Image URL">
+        <button type="submit">Add Property</button>
+    </form>
+
+    <h2>Properties</h2>
+    <div id="property-list"></div>
+    <button onclick="bookProperty('${prop._id}')">Book Now</button>
+
+    <script>
+    async function bookProperty(propertyId) {
+        const userId = "USER_ID_HERE"; // Replace with actual logged-in user ID
+        const startDate = prompt("Enter start date (YYYY-MM-DD):");
+        const endDate = prompt("Enter end date (YYYY-MM-DD):");
+
+        await fetch("http://localhost:8005/api/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ property: propertyId, user: userId, startDate, endDate })
+        });
+
+        alert("Booking request sent!");
+    }
+    </script>
+
+    <script>
+        async function fetchProperties() {
+            const res = await fetch("http://localhost:8005/api/properties");
+            const properties = await res.json();
+            const propertyList = document.getElementById("property-list");
+            propertyList.innerHTML = properties.map(prop => `
+                <div>
+                    <h3>${prop.title}</h3>
+                    <p>${prop.description}</p>
+                    <p>Price: $${prop.price}</p>
+                    <p>Location: ${prop.location}</p>
+                    <button onclick="deleteProperty('${prop._id}')">Delete</button>
+                </div>
+            `).join("");
+        }
+
+        document.getElementById("property-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const title = document.getElementById("title").value;
+            const description = document.getElementById("description").value;
+            const price = document.getElementById("price").value;
+            const location = document.getElementById("location").value;
+            const image = document.getElementById("image").value;
+
+            await fetch("http://localhost:8005/api/properties", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, description, price, location, image })
+            });
+
+            fetchProperties(); // Refresh list
+        });
+
+        async function deleteProperty(id) {
+            await fetch(`http://localhost:8005/api/properties/${id}`, { method: "DELETE" });
+            fetchProperties();
+        }
+
+        fetchProperties(); // Load properties on page load
+    </script>
 </body>
 </html>
